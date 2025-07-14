@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国移动长三角(南京)云计算中心</title>
+    <script src="./lib/Cesium/Build/CesiumUnminified/Cesium.js"></script>
+    <link rel="stylesheet" href="./lib/Cesium/Build/CesiumUnminified/Widgets/widgets.css">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Cesium CSS -->
+    <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.107/Build/Cesium/Widgets/widgets.css">
+    
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <!-- 顶部标题栏 -->
+    <header class="dashboard-header">
+        <div class="logo-container">
+            <i class="bi bi-building-fill logo-icon"></i>
+            <h1 class="dashboard-title">中国移动长三角（南京）云计算中心</h1>
+        </div>
+    
+        <div class="system-status">
+            <div class="status-item">
+                <span class="status-label">模型数量</span>
+                <span class="status-value">24个</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主内容区 -->
+    <div class="dashboard-content">
+        <!-- 左侧工具栏 -->
+        <nav class="dashboard-sidebar">
+            <!-- 显隐控制 -->
+            <div class="tool-section">
+                <h3 class="section-title">
+                    <i class="bi bi-eye-fill section-icon"></i>
+                    显隐控制
+                </h3>
+    
+                <div class="building-buttons">
+                    <button class="building-button active" data-building="1">
+                        <i class="bi bi-building toggle-icon"></i>
+                        1号楼
+                    </button>
+                    <button class="building-button active" data-building="2">
+                        <i class="bi bi-building toggle-icon"></i>
+                        2号楼
+                    </button>
+                    <button class="building-button active" data-building="3">
+                        <i class="bi bi-building toggle-icon"></i>
+                        3号楼
+                    </button>
+                    <button class="building-button active" data-building="4">
+                        <i class="bi bi-building toggle-icon"></i>
+                        4号楼
+                    </button>
+                    <button class="building-button active" data-building="5">
+                        <i class="bi bi-building toggle-icon"></i>
+                        5号楼
+                    </button>
+                    <button class="building-button active" data-building="6">
+                        <i class="bi bi-building toggle-icon"></i>
+                        6号楼
+                    </button>
+                    <button class="building-button active" data-building="7">
+                        <i class="bi bi-building toggle-icon"></i>
+                        7号楼
+                    </button>
+                    <button class="building-button active" data-building="8">
+                        <i class="bi bi-building toggle-icon"></i>
+                        8号楼
+                    </button>
+                    <button class="building-button active" data-building="9">
+                        <i class="bi bi-building toggle-icon"></i>
+                        9号楼
+                    </button>
+                    <button class="building-button active" data-building="10">
+                        <i class="bi bi-building toggle-icon"></i>
+                        背景模型
+                    </button>
+                    <button class="building-button active" data-building="11">
+                        <i class="bi bi-building toggle-icon"></i>
+                        花坛013
+                    </button>
+                    <button class="building-button active" data-building="12">
+                        <i class="bi bi-building toggle-icon"></i>
+                        花坛001
+                    </button>
+                </div>
+            </div>
+    
+            <!-- 单体化 -->
+            <div class="tool-section">
+                <h3 class="section-title">
+                    <i class="bi bi-cube-fill section-icon"></i>
+                    单体化功能
+                </h3>
+    
+                <button class="tool-button">
+                    <i class="bi bi-bounding-box"></i>
+                    建筑单体化
+                </button>
+            </div>
+    
+            <!-- 分析工具 -->
+            <div class="tool-section">
+                <h3 class="section-title">
+                    <i class="bi bi-bar-chart-line-fill section-icon"></i>
+                    分析工具
+                </h3>
+    
+                <button class="tool-button">
+                    <i class="bi bi-rulers"></i>
+                    距离测量
+                </button>
+                <button class="tool-button">
+                    <i class="bi bi-pentagon"></i>
+                    面积测量
+                </button>
+                <button class="tool-button">
+                    <i class="bi bi-bounding-box-circles"></i>
+                    体积测量
+                </button>
+            </div>
+    
+            
+    
+            <!-- 系统设置 -->
+            <div class="tool-section">
+                <h3 class="section-title">
+                    <i class="bi bi-gear-fill section-icon pulse"></i>
+                    系统设置
+                </h3>
+                <button class="tool-button" id="performance-toggle">
+                    <i class="bi bi-speedometer2"></i>
+                    性能显示       </button>
+                <button class="tool-button">
+                    <i class="bi bi-box-arrow-right"></i>
+                    退出系统
+                </button>
+            </div>
+        </nav>
+    
+        <!-- 主视图区 -->
+        <!-- <div class="main-view-container">
+            <div id="CesiumContainer">
+                <div class="cesium-placeholder">
+                    <div>
+                        <i class="bi bi-globe-asia-australia" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <h3>三维重建可视化区域</h3>
+                        <p style="font-size: 16px; margin-top: 10px;">中国移动智慧园区三维模型</p>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+    </div>
+    <div id="CesiumContainer"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/tilesetAdjust.js"></script>
+    <script src="./js/script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+                const buildingButtons = document.querySelectorAll(".building-button");
+                buildingButtons.forEach(button => {
+                    button.addEventListener("click", function () {
+                        const idx = parseInt(this.getAttribute("data-building"), 10) - 1;
+                        if (idx >= 0 && idx < buildingTileSetArr.length) {
+                            const tileset = buildingTileSetArr[idx];
+                            if (!tileset) {
+                                console.warn(`第 ${idx + 1} 号楼的 tileset 未加载或不存在`);
+                                return;
+                            }
+                            tileset.show = !tileset.show;
+                            if (tileset.show) {
+                                this.classList.add("active");
+                            } else {
+                                this.classList.remove("active");
+                            }
+                        } else if (idx ==9) {
+                            const tileset = myTileSet;
+                            if (!tileset) {
+                                console.warn(`第 ${idx + 1} 号楼的 tileset 未加载或不存在`);
+                                return;
+                            }
+                            tileset.show = !tileset.show;
+                            if (tileset.show) {
+                                this.classList.add("active");
+                            } else {
+                                this.classList.remove("active");
+                            }
+                        }else if (idx == 10){
+                            const tileset = tree013;
+                            tileset.show = !tileset.show;
+                            if (tileset.show) {
+                                this.classList.add("active");
+                            } else {
+                                this.classList.remove("active");
+                            }
+                        } else if (idx == 11) {
+                            const tileset = tree001;
+                            tileset.show = !tileset.show;
+                            if (tileset.show) {
+                                this.classList.add("active");
+                            } else {
+                                this.classList.remove("active");
+                            }
+                        }
+                    });
+                });
+            });
+            // ===============================================================
+    </script>
+</body>
+</html>
