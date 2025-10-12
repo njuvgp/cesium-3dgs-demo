@@ -17,3 +17,9 @@
 1. 完成3DGS点云的光照、阴影、重光照处理。<br>
 2. 完成3DGS模型的风格化。<br>
 3. 尝试实现对原生.ply文件的渲染支持。<br>
+
+## 项目部署方法
+1. 在Cesium官方github中克隆v1.125版本的源代码；
+2. 将shaders下面的两个着色器文件替换掉Cesium源代码中/package/engine/shaders/model下的同名文件；
+3. 运行npm build，将生成的build文件夹替换本项目中的build文件夹。
+4. 运行本项目，打开demo.html文件。
