@@ -6,6 +6,12 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 
 南京大学地理与海洋科学学院虚拟地理环境实验室长期专注于虚拟地理场景的模拟与分析研究，主要研究方向涵盖地理信息三维可视化、时空数据建模与分析，以及人工智能与 GIS 技术的融合应用。实验室注重理论与实践相结合，已承担多个 GIS 专题应用系统研发任务，相关成果已在多个领域得到实际应用。
 
+## 演示视频
+
+[demo.mp4](./demo.mp4)
+
+如果在当前平台中无法直接播放视频，可以下载或打开项目根目录下的 `demo.mp4` 查看运行效果。
+
 ## 更新日志
 
 - 2026.09.28：发布 v2.0。基于 Cesium v1.145 重写 PLY 加载流程，支持无需切片直接加载原生 3DGS PLY 文件。
@@ -30,6 +36,7 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 │   ├── ThirdParty/
 │   │   └── wasm_splats_bg.wasm
 │   └── widgets.css
+├── demo.mp4
 ├── demo.ply
 └── README.md
 ```
@@ -40,6 +47,7 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 - `App/RawPlyGaussianSplatLoader.js`：原生 PLY 加载与解析逻辑。
 - `App/Cesium.js`：Cesium 构建文件。
 - `App/ThirdParty/wasm_splats_bg.wasm`：Cesium 3DGS 渲染所需的 WASM 文件。
+- `demo.mp4`：项目运行效果演示视频。
 - `demo.ply`：示例 3DGS PLY 数据。
 
 ## 项目启动方法
