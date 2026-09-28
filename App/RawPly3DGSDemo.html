@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
+    />
+    <title>Raw PLY 3DGS Demo</title>
+    <script src="./Cesium.js"></script>
+    <script src="./RawPlyGaussianSplatLoader.js"></script>
+    <style>
+      @import url(./widgets.css);
+
+      html,
+      body,
+      #cesiumContainer {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      #statusPanel {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 1;
+        box-sizing: border-box;
+        width: min(620px, calc(100% - 32px));
+        padding: 14px 16px;
+        border: 1px solid rgb(70 75 83 / 0.9);
+        border-radius: 6px;
+        background: rgb(20 24 31 / 0.88);
+        color: #f3f6fb;
+        font:
+          14px/1.45 system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+      }
+
+      #statusPanel h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 650;
+      }
+
+      #progressBar {
+        width: 100%;
+        height: 8px;
+        margin-top: 12px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgb(77 87 102 / 0.65);
+      }
+
+      #progressFill {
+        width: 0%;
+        height: 100%;
+        background: #68a6ff;
+        transition: width 120ms ease-out;
+      }
+
+      #statusDetails {
+        margin: 10px 0 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        color: #c9d4e5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="cesiumContainer"></div>
+    <section id="statusPanel">
+      <h1>Raw PLY 3DGS</h1>
+      <div id="statusMessage">Loading raw PLY...</div>
+      <div id="progressBar"><div id="progressFill"></div></div>
+      <pre id="statusDetails"></pre>
+    </section>
+    <script>
+      const viewer = new Cesium.Viewer("cesiumContainer");
+      const statusMessage = document.getElementById("statusMessage");
+      const statusDetails = document.getElementById("statusDetails");
+      const progressFill = document.getElementById("progressFill");
+
+      const params = new URLSearchParams(window.location.search);
+      const plyUrl = params.get("url") ?? "../demo.ply";
+      const longitude = Number(params.get("lon") ?? 116.391);
+      const latitude = Number(params.get("lat") ?? 39.907);
+      const height = Number(params.get("height") ?? 5.0);
+
+      function onProgress(progress) {
+        const percentText =
+          progress.percent === undefined
+            ? ""
+            : ` ${Math.round(progress.percent * 100)}%`;
+        statusMessage.textContent = `${progress.message}${percentText}`;
+        if (progress.percent !== undefined) {
+          progressFill.style.width = `${Math.round(progress.percent * 100)}%`;
+        }
+      }
+
+      async function loadRawPly() {
+        statusDetails.textContent = [
+          `URL: ${plyUrl}`,
+          "",
+          "PLY local coordinate frame:",
+          `Origin longitude: ${longitude}`,
+          `Origin latitude: ${latitude}`,
+          `Origin height: ${height} meters`,
+          "",
+          "Coordinate mapping:",
+          "PLY +X = local East meters",
+          "PLY +Y = local North meters",
+          "PLY +Z = local Up meters",
+        ].join("\n");
+
+        const primitive = await RawPlyGaussianSplatLoader.fromUrl({
+          url: plyUrl,
+          longitude: longitude,
+          latitude: latitude,
+          height: height,
+          onProgress: onProgress,
+        });
+
+        viewer.scene.primitives.add(primitive);
+        viewer.camera.flyToBoundingSphere(
+          primitive.rawPlyGaussianSplatInfo.tileset.boundingSphere,
+          {
+            offset: new Cesium.HeadingPitchRange(
+              0.0,
+              Cesium.Math.toRadians(-25.0),
+              80.0,
+            ),
+          },
+        );
+
+        statusMessage.textContent = "Raw PLY 3DGS loaded.";
+        progressFill.style.width = "100%";
+        statusDetails.textContent = [
+          `URL: ${primitive.rawPlyGaussianSplatInfo.url}`,
+          `Splats: ${primitive.rawPlyGaussianSplatInfo.splatCount}`,
+          "",
+          "PLY local coordinate frame:",
+          `Origin longitude: ${primitive.rawPlyGaussianSplatInfo.longitude}`,
+          `Origin latitude: ${primitive.rawPlyGaussianSplatInfo.latitude}`,
+          `Origin height: ${primitive.rawPlyGaussianSplatInfo.height} meters`,
+          "",
+          "Coordinate mapping:",
+          "PLY +X = local East meters",
+          "PLY +Y = local North meters",
+          "PLY +Z = local Up meters",
+        ].join("\n");
+      }
+
+      loadRawPly().catch((error) => {
+        statusMessage.textContent = "Failed to load raw PLY 3DGS.";
+        statusDetails.textContent = error.toString();
+      });
+    </script>
+  </body>
+</html>
