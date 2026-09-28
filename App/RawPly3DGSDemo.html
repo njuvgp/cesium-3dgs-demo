@@ -83,7 +83,19 @@
       <pre id="statusDetails"></pre>
     </section>
     <script>
-      const viewer = new Cesium.Viewer("cesiumContainer");
+      const viewer = new Cesium.Viewer("cesiumContainer", {
+        animation: false,
+        baseLayer: false,
+        baseLayerPicker: false,
+        fullscreenButton: false,
+        geocoder: false,
+        homeButton: false,
+        infoBox: false,
+        navigationHelpButton: false,
+        sceneModePicker: false,
+        selectionIndicator: false,
+        timeline: false,
+      });
       const statusMessage = document.getElementById("statusMessage");
       const statusDetails = document.getElementById("statusDetails");
       const progressFill = document.getElementById("progressFill");
