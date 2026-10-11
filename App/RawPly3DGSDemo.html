@@ -8,11 +8,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
     />
     <title>Raw PLY 3DGS Demo</title>
-    <script src="./Cesium.js"></script>
-    <script src="./RawPlyGaussianSplatLoader.js"></script>
     <style>
-      @import url(./widgets.css);
-
       html,
       body,
       #cesiumContainer {
@@ -72,6 +68,47 @@
         overflow-wrap: anywhere;
         color: #c9d4e5;
       }
+
+      #transformPanel {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 1;
+        box-sizing: border-box;
+        width: 320px;
+        padding: 14px 16px;
+        border: 1px solid rgb(70 75 83 / 0.9);
+        border-radius: 6px;
+        background: rgb(20 24 31 / 0.9);
+        color: #f3f6fb;
+        font: 13px/1.4 system-ui, sans-serif;
+      }
+
+      #transformPanel h2 { margin: 0 0 12px; font-size: 15px; }
+      .controlGroup { margin: 0 0 12px; padding: 0; border: 0; }
+      .controlGroup legend { margin-bottom: 6px; color: #b9c7da; font-weight: 600; }
+      .inputGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .inputGrid.quaternion { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .inputGrid label { display: grid; gap: 3px; color: #aebdd0; font-size: 11px; }
+      .inputGrid input {
+        box-sizing: border-box; width: 100%; min-width: 0; height: 30px;
+        padding: 4px 6px; border: 1px solid #526075; border-radius: 4px;
+        background: #111720; color: #f3f6fb;
+      }
+      #resetTransform {
+        width: 100%; height: 32px; border: 1px solid #61718a; border-radius: 4px;
+        background: #2d3949; color: #fff; cursor: pointer;
+      }
+      #transformPanel input:disabled, #resetTransform:disabled { opacity: 0.5; }
+      #transformError { min-height: 18px; margin-top: 8px; color: #ff9a9a; font-size: 12px; }
+
+      @media (max-width: 1020px) {
+        #statusPanel { right: 12px; left: 12px; width: auto; max-height: 38%; overflow: auto; }
+        #transformPanel {
+          top: auto; right: 12px; bottom: 18px; left: 12px; width: auto;
+          max-height: 52%; overflow: auto;
+        }
+      }
     </style>
   </head>
   <body>
@@ -82,23 +119,53 @@
       <div id="progressBar"><div id="progressFill"></div></div>
       <pre id="statusDetails"></pre>
     </section>
-    <script>
-      const viewer = new Cesium.Viewer("cesiumContainer", {
-        animation: false,
-        baseLayer: false,
-        baseLayerPicker: false,
-        fullscreenButton: false,
-        geocoder: false,
-        homeButton: false,
-        infoBox: false,
-        navigationHelpButton: false,
-        sceneModePicker: false,
-        selectionIndicator: false,
-        timeline: false,
-      });
+    <section id="transformPanel">
+      <h2>3DGS 变换</h2>
+      <fieldset class="controlGroup">
+        <legend>平移 ENU（米）</legend>
+        <div class="inputGrid">
+          <label>东 E<input id="east" type="number" value="0" step="0.1" disabled /></label>
+          <label>北 N<input id="north" type="number" value="0" step="0.1" disabled /></label>
+          <label>上 U<input id="up" type="number" value="0" step="0.1" disabled /></label>
+        </div>
+      </fieldset>
+      <fieldset class="controlGroup">
+        <legend>旋转四元数（x, y, z, w）</legend>
+        <div class="inputGrid quaternion">
+          <label>X<input id="qx" type="number" value="0" step="0.01" disabled /></label>
+          <label>Y<input id="qy" type="number" value="0" step="0.01" disabled /></label>
+          <label>Z<input id="qz" type="number" value="0" step="0.01" disabled /></label>
+          <label>W<input id="qw" type="number" value="1" step="0.01" disabled /></label>
+        </div>
+      </fieldset>
+      <fieldset class="controlGroup">
+        <legend>缩放</legend>
+        <div class="inputGrid">
+          <label>X<input id="sx" type="number" value="1" min="0.001" step="0.05" disabled /></label>
+          <label>Y<input id="sy" type="number" value="1" min="0.001" step="0.05" disabled /></label>
+          <label>Z<input id="sz" type="number" value="1" min="0.001" step="0.05" disabled /></label>
+        </div>
+      </fieldset>
+      <button id="resetTransform" type="button" disabled>重置变换</button>
+      <div id="transformError"></div>
+    </section>
+    <script type="module">
+      import * as Cesium from "cesium";
+      import "cesium/Build/Cesium/Widgets/widgets.css";
+
+      window.CESIUM_BASE_URL = "/cesiumStatic/";
+      window.Cesium = Cesium;
+      await import("./RawPlyGaussianSplatLoader.js");
+
+      const viewer = new Cesium.Viewer("cesiumContainer");
       const statusMessage = document.getElementById("statusMessage");
       const statusDetails = document.getElementById("statusDetails");
       const progressFill = document.getElementById("progressFill");
+      const transformInputs = [...document.querySelectorAll("#transformPanel input")];
+      const resetButton = document.getElementById("resetTransform");
+      const transformError = document.getElementById("transformError");
+      let gaussianPrimitive;
+      let transformFrame;
 
       const params = new URLSearchParams(window.location.search);
       const plyUrl = params.get("url") ?? "../demo.ply";
@@ -116,6 +183,35 @@
           progressFill.style.width = `${Math.round(progress.percent * 100)}%`;
         }
       }
+
+      function value(id) { return Number(document.getElementById(id).value); }
+
+      function applyTransform() {
+        if (!gaussianPrimitive) return;
+        cancelAnimationFrame(transformFrame);
+        transformFrame = requestAnimationFrame(() => {
+          try {
+            gaussianPrimitive.setTransform({
+              translationENU: new Cesium.Cartesian3(value("east"), value("north"), value("up")),
+              rotation: new Cesium.Quaternion(value("qx"), value("qy"), value("qz"), value("qw")),
+              scale: new Cesium.Cartesian3(value("sx"), value("sy"), value("sz")),
+            });
+            transformError.textContent = "";
+            viewer.scene.requestRender();
+          } catch (error) {
+            transformError.textContent = error.message;
+          }
+        });
+      }
+
+      transformInputs.forEach((input) => input.addEventListener("input", applyTransform));
+      resetButton.addEventListener("click", () => {
+        const defaults = { east: 0, north: 0, up: 0, qx: 0, qy: 0, qz: 0, qw: 1, sx: 1, sy: 1, sz: 1 };
+        Object.entries(defaults).forEach(([id, value]) => { document.getElementById(id).value = value; });
+        gaussianPrimitive.resetTransform();
+        transformError.textContent = "";
+        viewer.scene.requestRender();
+      });
 
       async function loadRawPly() {
         statusDetails.textContent = [
@@ -139,6 +235,10 @@
           height: height,
           onProgress: onProgress,
         });
+
+        gaussianPrimitive = primitive;
+        transformInputs.forEach((input) => { input.disabled = false; });
+        resetButton.disabled = false;
 
         viewer.scene.primitives.add(primitive);
         viewer.camera.flyToBoundingSphere(

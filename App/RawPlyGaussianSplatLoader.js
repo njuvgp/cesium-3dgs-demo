@@ -296,6 +296,149 @@
     return tileset;
   }
 
+  function installTransformControls(primitive) {
+    const content = primitive._tileset._selectedTiles[0].content;
+    const state = {
+      translationENU: new Cesium.Cartesian3(),
+      rotation: Cesium.Quaternion.clone(Cesium.Quaternion.IDENTITY),
+      scale: new Cesium.Cartesian3(1.0, 1.0, 1.0),
+      baseWorldTransform: Cesium.Matrix4.clone(content.worldTransform),
+      localTransform: new Cesium.Matrix4(),
+      originalPositions: new Float32Array(content.positions),
+      originalRotations: new Float32Array(content.rotations),
+      originalScales: new Float32Array(content.scales),
+    };
+
+    function updateLocalTransform() {
+      Cesium.Matrix4.fromTranslationQuaternionRotationScale(
+        state.translationENU,
+        state.rotation,
+        state.scale,
+        state.localTransform,
+      );
+    }
+
+    function rebuildSplatTransform() {
+      content.positions.set(state.originalPositions);
+      content.rotations.set(state.originalRotations);
+      content.scales.set(state.originalScales);
+      content._transformed = false;
+      content._lastSplatTransform = undefined;
+
+      Cesium.Matrix4.multiplyTransformation(
+        state.baseWorldTransform,
+        state.localTransform,
+        content.worldTransform,
+      );
+      primitive._dirty = true;
+      primitive._needsSnapshotRebuild = true;
+    }
+
+    function requireFinite(value, name) {
+      if (!Number.isFinite(value)) {
+        throw new Error(`${name} must be a finite number.`);
+      }
+      return value;
+    }
+
+    primitive.setTranslationENU = function (east, north, up) {
+      Cesium.Cartesian3.fromElements(
+        requireFinite(east, "east"),
+        requireFinite(north, "north"),
+        requireFinite(up, "up"),
+        state.translationENU,
+      );
+      updateLocalTransform();
+      rebuildSplatTransform();
+      return primitive;
+    };
+
+    primitive.setRotationQuaternion = function (x, y, z, w) {
+      x = requireFinite(x, "quaternion x");
+      y = requireFinite(y, "quaternion y");
+      z = requireFinite(z, "quaternion z");
+      w = requireFinite(w, "quaternion w");
+      const magnitudeSquared = x * x + y * y + z * z + w * w;
+      if (magnitudeSquared === 0.0) {
+        throw new Error("Rotation quaternion must not be zero.");
+      }
+      state.rotation.x = x;
+      state.rotation.y = y;
+      state.rotation.z = z;
+      state.rotation.w = w;
+      Cesium.Quaternion.normalize(state.rotation, state.rotation);
+      updateLocalTransform();
+      rebuildSplatTransform();
+      return primitive;
+    };
+
+    primitive.setScale = function (x, y, z) {
+      y = defined(y) ? y : x;
+      z = defined(z) ? z : x;
+      x = requireFinite(x, "scale x");
+      y = requireFinite(y, "scale y");
+      z = requireFinite(z, "scale z");
+      if (x <= 0.0 || y <= 0.0 || z <= 0.0) {
+        throw new Error("Scale values must be greater than zero.");
+      }
+      Cesium.Cartesian3.fromElements(x, y, z, state.scale);
+      updateLocalTransform();
+      rebuildSplatTransform();
+      return primitive;
+    };
+
+    primitive.setTransform = function (options) {
+      options = options ?? {};
+      const translation = options.translationENU ?? state.translationENU;
+      const rotation = options.rotation ?? state.rotation;
+      const scale = options.scale ?? state.scale;
+
+      Cesium.Cartesian3.fromElements(
+        requireFinite(translation.x, "east"),
+        requireFinite(translation.y, "north"),
+        requireFinite(translation.z, "up"),
+        state.translationENU,
+      );
+
+      const qx = requireFinite(rotation.x, "quaternion x");
+      const qy = requireFinite(rotation.y, "quaternion y");
+      const qz = requireFinite(rotation.z, "quaternion z");
+      const qw = requireFinite(rotation.w, "quaternion w");
+      if (qx * qx + qy * qy + qz * qz + qw * qw === 0.0) {
+        throw new Error("Rotation quaternion must not be zero.");
+      }
+      state.rotation.x = qx;
+      state.rotation.y = qy;
+      state.rotation.z = qz;
+      state.rotation.w = qw;
+      Cesium.Quaternion.normalize(state.rotation, state.rotation);
+
+      const sx = requireFinite(scale.x, "scale x");
+      const sy = requireFinite(scale.y, "scale y");
+      const sz = requireFinite(scale.z, "scale z");
+      if (sx <= 0.0 || sy <= 0.0 || sz <= 0.0) {
+        throw new Error("Scale values must be greater than zero.");
+      }
+      Cesium.Cartesian3.fromElements(sx, sy, sz, state.scale);
+
+      updateLocalTransform();
+      rebuildSplatTransform();
+      return primitive;
+    };
+
+    primitive.resetTransform = function () {
+      Cesium.Cartesian3.clone(Cesium.Cartesian3.ZERO, state.translationENU);
+      Cesium.Quaternion.clone(Cesium.Quaternion.IDENTITY, state.rotation);
+      Cesium.Cartesian3.fromElements(1.0, 1.0, 1.0, state.scale);
+      updateLocalTransform();
+      rebuildSplatTransform();
+      return primitive;
+    };
+
+    updateLocalTransform();
+    return state;
+  }
+
   async function fromUrl(options) {
     if (!defined(window.Cesium)) {
       throw new Error("Cesium must be loaded before RawPlyGaussianSplatLoader.js.");
@@ -354,6 +497,8 @@
       enuTransform: enuTransform,
       tileset: rawTileset,
     };
+    primitive.rawPlyGaussianSplatInfo.transform =
+      installTransformControls(primitive);
 
     report(progressCallback, "ready", 1, 1, "Raw PLY 3DGS primitive is ready.");
     return primitive;
@@ -362,5 +507,20 @@
   window.RawPlyGaussianSplatLoader = {
     fromUrl: fromUrl,
     parsePly: parsePly,
+    setTranslationENU: function (primitive, east, north, up) {
+      return primitive.setTranslationENU(east, north, up);
+    },
+    setRotationQuaternion: function (primitive, x, y, z, w) {
+      return primitive.setRotationQuaternion(x, y, z, w);
+    },
+    setScale: function (primitive, x, y, z) {
+      return primitive.setScale(x, y, z);
+    },
+    setTransform: function (primitive, options) {
+      return primitive.setTransform(options);
+    },
+    resetTransform: function (primitive) {
+      return primitive.resetTransform();
+    },
   };
 })();

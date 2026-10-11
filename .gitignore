@@ -5,4 +5,6 @@ js/measure.js
 js/script.js
 js/tilesetAdjust.js
 index.html
+node_modules/
+dist/
 中国移动原型样机部署方法.docx

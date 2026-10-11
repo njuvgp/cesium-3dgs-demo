@@ -1,0 +1,20 @@
+{
+  "name": "cesium-3dgs-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@cesium/engine": "26.3.0",
+    "@cesium/widgets": "16.2.0",
+    "cesium": "1.145.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.9",
+    "vite-plugin-static-copy": "^3.1.2"
+  }
+}

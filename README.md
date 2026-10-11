@@ -13,7 +13,7 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 如果在当前平台中无法直接播放视频，可以下载或打开项目根目录下的 `demo.mp4` 查看运行效果。
 
 ## 更新日志
-
+- 2026.10.11：发布 v2.1。加入了PLY的平移、旋转、缩放操作，修复已知bug。
 - 2026.09.28：发布 v2.0。基于 Cesium v1.145 重写 PLY 加载流程，支持无需切片直接加载原生 3DGS PLY 文件。
 - 2025.10.12：发布 v1.0。基于 Cesium v1.125 改进 3DGS shader，实现更好的视觉表现。
 
@@ -30,12 +30,10 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 ```text
 .
 ├── App/
-│   ├── Cesium.js
 │   ├── RawPly3DGSDemo.html
 │   ├── RawPlyGaussianSplatLoader.js
 │   ├── ThirdParty/
 │   │   └── wasm_splats_bg.wasm
-│   └── widgets.css
 ├── demo.mp4
 ├── demo.ply
 └── README.md
@@ -45,37 +43,42 @@ v1.0 版本基于 Cesium v1.125 对 3DGS shader 进行了改进，在色彩还�
 
 - `App/RawPly3DGSDemo.html`：示例页面入口。
 - `App/RawPlyGaussianSplatLoader.js`：原生 PLY 加载与解析逻辑。
-- `App/Cesium.js`：Cesium 构建文件。
 - `App/ThirdParty/wasm_splats_bg.wasm`：Cesium 3DGS 渲染所需的 WASM 文件。
 - `demo.mp4`：项目运行效果演示视频。
 - `demo.ply`：示例 3DGS PLY 数据。
 
 ## 项目启动方法
 
-请使用本地 Web 服务启动项目，不建议直接双击 HTML 文件运行。浏览器在 `file://` 协议下会限制 PLY、WASM 等资源加载，可能导致 Cesium 页面无法正常显示。
+本项目使用 npm 管理 Cesium v1.145，并通过 Vite 启动和构建。请先安装 Node.js 22 或更高版本，不建议直接双击 HTML 文件运行。
 
-在项目根目录执行：
-
-```powershell
-python -m http.server 8080
-```
-
-然后在浏览器中访问：
-
-```text
-http://localhost:8080/App/RawPly3DGSDemo.html
-```
-
-如果 `8080` 端口已被占用，可以改用其他端口，例如：
+首次运行时，在项目根目录安装依赖：
 
 ```powershell
-python -m http.server 5501
+npm install
 ```
 
-对应访问地址为：
+启动开发服务器：
+
+```powershell
+npm run dev
+```
+
+然后根据终端输出访问示例页面，默认地址为：
 
 ```text
-http://localhost:5501/App/RawPly3DGSDemo.html
+http://localhost:5173/App/RawPly3DGSDemo.html
+```
+
+如需生成生产环境文件，执行：
+
+```powershell
+npm run build
+```
+
+构建结果位于 `dist/` 目录。可以执行以下命令预览构建结果：
+
+```powershell
+npm run preview
 ```
 
 ## 在 Cesium 中集成
